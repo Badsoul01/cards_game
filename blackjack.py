@@ -1,4 +1,36 @@
 import random
+#Kolo protihráče
+def opponent_turn(computer_hand,pack,computer_value):
+    while sum(computer_value) <=16:
+        computer_hand,pack = deal_cards(computer_hand,pack)
+        computer_value = value_of_opponent_hand(computer_hand,computer_value)
+        print(f"Karty na ruce protihráče: {computer_hand}")
+    return computer_hand,pack,computer_value
+# funkce na zjištění hodnot karet oponenta
+def value_of_opponent_hand(hand,value):
+    list_of_cards = hand.split()
+    for i in range(len(list_of_cards)):
+        if len(list_of_cards)>2:
+            i+=1
+            i*=-1
+        if len(value)!= len(list_of_cards):
+            if list_of_cards[i][1] in "JQKA":
+                if list_of_cards[i][1] =="A":
+                    if len(list_of_cards) <=2:
+                        value.append(11)
+                    else:
+                        if sum(value) >=10:
+                            value.append(11)
+                        else:
+                            value.append(1)
+                else:
+                    value.append(10)
+            elif list_of_cards[i][1].isdigit():
+                if int(list_of_cards[i][1]) == 1:
+                    value.append(10)
+                else:
+                    value.append(int(list_of_cards[i][1]))
+    return value
 # funkce na zjištění hodnot karet v ruce
 def value_of_card_on_hand(hand,value):
     list_hand = hand.split()
@@ -20,7 +52,7 @@ def value_of_card_on_hand(hand,value):
     return value
 # funkce na zjištění hodnot Esa u hráče
 def value_of_player_aces(hand):
-    print(f"Karty na tvé ruce {' '.join(hand)}")
+    print(f"Karty na tvé ruce {hand}")
     while True:
         aces = int(input("Máš v ruce Eso? Chceš za něho 11 bodů nebo 1 bod? "))
         if aces == 11:
@@ -41,7 +73,7 @@ def pack_of_cards():
     for sign in signs:
         for number in numbers:
             pack.append(sign+str(number))
-    random.shuffle(deck)
+    random.shuffle(pack)
     return pack
 #rozdávání karet
 def deal_cards(hand,pack):
@@ -59,7 +91,7 @@ def deal_cards(hand,pack):
 
     return " ".join(new_hand),pack
 # hlavní nabídka
-def main_menu(hand,pack,value,ts):
+def main_menu(p_hand,computer_hand,pack,value,ai_value,ts):
     print("Vítej v této karetní hře!")
     print("""Co bys rád udělal?
     1) Začal novou hru
@@ -69,13 +101,15 @@ def main_menu(hand,pack,value,ts):
     while True:
         choice = input("Tvé rozhodnutí: ")
         if choice == "1":
-            game_round(hand,pack,value,ts)
+            game_round(p_hand,computer_hand,pack,value,ai_value,ts)
             break
 
         elif choice == "2":
-            print("""Cíl hry je mít součet karet na ruce co nejblíže 21.\nPokud budeš mít na ruce Eso, můžeš zvolit jeho hodnotu jako 1 nebo 11.
-            K, Q a J je za 10bodů, zbytek podle hodnoty dané karty.\nPokud překročíš 21 prohráváš a to co vsadíš se odečítá od tvé celkové výhry.\nPokud trefíš stejný bodový součet jako protivník dostaneš polovinu. A pokud vyhraješ tak dostáváš částku kterou vsadíš.\nJeště máš možnost zdvojnásobit částku.
-                    """)
+            print("""
+            Cíl hry je mít součet karet na ruce co nejblíže 21.Pokud budeš mít na ruce Eso, můžeš zvolit jeho hodnotu jako 1 nebo 11.
+            K, Q a J je za 10bodů, zbytek podle hodnoty dané karty.Pokud překročíš 21 prohráváš a to co vsadíš se odečítá od tvé celkové výhry.\nPokud trefíš stejný bodový součet jako protivník dostaneš polovinu. A pokud vyhraješ tak dostáváš částku kterou vsadíš.\nJeště máš možnost zdvojnásobit částku.
+            Dokud jsi na tahu tak z karet protivníka vidíš pouze první kartu. Poté co ukončíš svůj tah, dostane protivník případné další karty a vyhodnotí se kolo.
+            """)
 
         elif choice == "3":
             break
@@ -84,8 +118,8 @@ def main_menu(hand,pack,value,ts):
 
     return choice
 #možnosti mezi tahy
-def cards_menu(hand,pack,tip, value):
-    print(f"""Tvé karty na ruce: {hand}\n\nCo bys chtěl udělat?
+def cards_menu(p_hand,computer_hand,pack,tip, value,computer_value):
+    print(f"""Tvé karty na ruce: {p_hand}\nKarta na ruce protivníka je: {computer_hand[:3]}\n\nCo bys chtěl udělat?
     1. Dej mi další kartu.
     2. Zdvojnásobím sázku.
     3. Ukončit tah.
@@ -93,19 +127,24 @@ def cards_menu(hand,pack,tip, value):
     while True:
         choice = input("Vyber si: ")
         if choice == "1":
-            hand,pack  = deal_cards(hand, pack)
-            value = value_of_card_on_hand(hand, value)
-            print(f"Zde je tvá nová karta {hand[len(hand)-3::]}.\nKarty na ruce: {hand}")
+            p_hand,pack  = deal_cards(p_hand, pack)
+            value = value_of_card_on_hand(p_hand, value)
+            print(f"Zde je tvá nová karta {p_hand[len(p_hand)-3::]}.\nKarty na ruce: {p_hand}.\nKarta na ruce protivníka je: {computer_hand[:3]}")
             if sum(value) >21:
-                return tip, hand, value
+                print(f"Karty na ruce: {p_hand}\nKarty na ruce protivníka jsou: {computer_hand}")
+                return tip, p_hand,computer_hand, value, computer_value
         elif choice == "2":
             tip*=2
-            hand,pack = deal_cards(hand, pack)
-            print(f"Tvoje sázka jsou nyní {tip} a tvá nová karta je {hand[len(hand)-3::]}.\nKarty na ruce: {hand}")
-            value = value_of_card_on_hand(hand, value)
-            return tip , hand,value
+            hand,pack = deal_cards(p_hand, pack)
+            print(f"Tvoje sázka jsou nyní {tip} a tvá nová karta je {p_hand[len(p_hand)-3::]}.\nKarty na ruce: {hand}.")
+            print(f"Karty protivníka jsou: {computer_hand}")
+            value = value_of_card_on_hand(p_hand, value)
+            computer_hand,pack,computer_value = opponent_turn(computer_hand,pack,computer_value)
+            return tip, p_hand,computer_hand, value, computer_value
         elif choice == "3":
-            return tip, hand,value
+            print(f"Karty na tvé ruce: {p_hand}\nKarty protivníka:{computer_hand}")
+            computer_hand, pack, computer_value = opponent_turn(computer_hand, pack, computer_value)
+            return tip, p_hand,computer_hand, value, computer_value
         else:
             print("Vyber z menu!")
 # možnost sázek
@@ -118,40 +157,49 @@ def betting(ts):
         else:
             print("Zadej číslo v určeném rozsahu!")
 # kontrola výhry/prohry/remízy
-def checking_winning_condition(hand, player_value,tip,ts):
-    if sum(player_value) == 21 and len(hand.split())==2:
+def checking_winning_condition(p_hand, player_value,computer_value,tip,ts):
+    if sum(player_value) == 21 and len(p_hand.split())==2:
         tip*=1,5
         ts+=tip
-        print(f"Tvá hodnota karet je {sum(player_value)}, vyhrál jsi {tip} zlaťáků!")
+        print(f"Tvá hodnota karet je {sum(player_value)},soupeř měl {sum(computer_value)}, vyhrál jsi {tip} zlaťáků!")
+
+    if sum(player_value) == sum(computer_value) and sum(player_value)<=21:
+        ts+=tip//2
+        print(f"Tvá hodnota karet je stejná jako hodnota karet na protivníkovy ruce, dostal jsi {tip//2} zlaťáků.")
 
     if sum(player_value)>21:
         ts-=tip
-        print(f"Tvá hodnota karet je {sum(player_value)} proto jsi prohrál {tip} zlaťáků.")
-
-    elif sum(player_value)<=21:
+        print(f"Tvá hodnota karet je větší než 21, proto jsi prohrál {tip} zlaťáků.")
+    if 21>=sum(computer_value)>sum(player_value):
+        ts-=tip
+        print(f"Protivník měl hodnotu karet blíže 21.Prohrál jsi {tip} zlaťáků.")
+    if 21 >= sum(player_value) > sum(computer_value):
         ts+=tip
-        print(f"Tvá hodnota karet je {sum(player_value)}. Vyhrál jsi {tip} zlaťáků, tvá celková zásoba je {ts}.")
+        print(f"Tvá hodnota karet je {sum(player_value)}.Tvůj soupěř měl hodnoty karet {sum(computer_value)}. Vyhrál jsi {tip} zlaťáků, tvá celková zásoba je {ts}.")
 
     return ts
 #herní kolo
-def game_round(hand,pack,value,ts):
-
+def game_round(p_hand,computer_hand,pack,value,ai_value,ts):
     playing = True
     while playing:
         bet = betting(ts)
-        hand, pack  = deal_cards(hand, pack)
-        value = value_of_card_on_hand(hand,value)
-        bet, hand, value = cards_menu(hand,pack,bet,value)
+        p_hand, pack  = deal_cards(p_hand, pack)
+        computer_hand,pack = deal_cards(computer_hand,pack)
+        value = value_of_card_on_hand(p_hand,value)
+        ai_value = value_of_opponent_hand(computer_hand,ai_value)
+        bet, p_hand,computer_hand, value,ai_value = cards_menu(p_hand,computer_hand,pack, bet, value, ai_value)
 
-        ts = checking_winning_condition(hand,value, bet, ts)
+        ts = checking_winning_condition(p_hand, value, ai_value, bet,total_score)
         if ts <=0:
             print("Promiň, ale nemáš zlaťáky na další hru.")
             break
         while True:
             new_round = input("Chceš hrát znova? A/N: ").capitalize()
             if new_round == "A":
-                hand = ""
+                p_hand = ""
                 value = []
+                computer_hand = ""
+                ai_value = []
                 print(f"Tvoje celková zásoba zlaťáků je {ts}!")
                 break
             elif new_round == "N":
@@ -168,6 +216,10 @@ value_of_player_cards = [] # list hodnot karet na ruce u hráče
 ai_hand = "" #karty od protihráče
 value_of_ai_hand = []   # list hodnot karet na ruce protihráče
 deck= []   #balík karet
-total_score = 50 #celkové zlaťáků, v případě záporného čísla je prohra
+total_score = 10 #celkové zlaťáků, v případě záporného čísla je prohra
 
-main_menu(player_hand, deck,value_of_player_cards, total_score)
+
+if __name__ == "__main__":
+    main_menu(player_hand,ai_hand,deck,value_of_player_cards,value_of_ai_hand,total_score)
+
+
